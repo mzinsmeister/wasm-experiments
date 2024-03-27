@@ -30,7 +30,7 @@ unsafe impl LinearMemory for HostPseudoLinearMemory {
 }
 
 // A memory creator that just maps the entire 64-bit host address space into a pseudo linear-memory wasm address space.
-struct HostMemoryCreator {}
+struct HostMemoryCreator ();
 
 unsafe impl MemoryCreator for HostMemoryCreator {
     fn new_memory(&self, _ty: MemoryType, _minimum: usize, _maximum: Option<usize>, _reserved_size_in_bytes: Option<usize>, _guard_size_in_bytes: usize) -> std::result::Result<Box<(dyn LinearMemory + 'static)>, std::string::String> {
@@ -39,9 +39,8 @@ unsafe impl MemoryCreator for HostMemoryCreator {
     }
 }
 
-fn main() {
-
-    // Define a binary wasm function that reads a 64 bit integer from memory 2 at a given 64-bit offset (memory64 wasm)
+fn get_wasm_fn() -> Vec<u8> {
+    // Define a binary wasm function that reads a 64 bit integer from memory 0 at a given 64-bit offset (memory64 wasm)
     // increments it and returns the previous value.
 
     let mut module = Module::new();
@@ -88,11 +87,15 @@ fn main() {
     module.section(&codes);
 
     // Extract the encoded Wasm bytes for this module.
-    let wasm_bytes = module.finish();
+    module.finish()
+}
+
+fn main() {
+
+    let wasm_bytes = get_wasm_fn();
 
     // Initialize Wasmtime runtime
-
-    let memory_creator = HostMemoryCreator {};
+    let memory_creator = HostMemoryCreator();
 
     let mut config = wasmtime::Config::new();
 
